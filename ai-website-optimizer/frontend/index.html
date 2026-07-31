@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Webview Intelligence Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand__mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="3" fill="currentColor"/>
+        <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.4"/>
+        <circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="1" opacity="0.35"/>
+      </svg>
+    </span>
+    <span class="brand__name">Webview Intelligence</span>
+    <span class="ai-provider-badge" id="ai-provider-badge" title="Set AI_PROVIDER in .env to switch">AI: —</span>
+  </div>
+  <div class="status-pills" id="status-pills">
+    <span class="pill" id="pill-wordpress" data-source="wordpress">
+      <span class="pill__dot"></span>WordPress <strong>—</strong>
+    </span>
+    <span class="pill" id="pill-prestashop" data-source="prestashop">
+      <span class="pill__dot"></span>PrestaShop <strong>—</strong>
+    </span>
+    <span class="pill" id="pill-frontend" data-source="frontend">
+      <span class="pill__dot"></span>Live pages <strong>—</strong>
+    </span>
+    <span class="pill" id="pill-gmail" data-source="gmail">
+      <span class="pill__dot"></span>Gmail <strong>—</strong>
+    </span>
+  </div>
+</header>
+
+<main class="layout">
+
+  <aside class="knowledge-panel">
+    <h2 class="panel-heading">Knowledge sources</h2>
+    <p class="panel-subtext">Pull real content in. Nothing below is sent to Claude until you generate.</p>
+
+    <section class="source-card" id="card-wordpress">
+      <div class="source-card__head">
+        <h3>WordPress</h3>
+        <span class="source-card__tag">pages &amp; posts via REST API</span>
+      </div>
+      <p class="source-card__desc">Fetches every configured post type from your site's <code>wp-json/wp/v2</code> API.</p>
+      <button class="btn btn--primary" id="btn-sync-wordpress" type="button">Sync WordPress</button>
+      <p class="source-card__result" id="result-wordpress" aria-live="polite"></p>
+    </section>
+
+    <section class="source-card" id="card-prestashop">
+      <div class="source-card__head">
+        <h3>PrestaShop</h3>
+        <span class="source-card__tag">products via Webservice API</span>
+      </div>
+      <p class="source-card__desc">Fetches products and their category names from your shop's webservice.</p>
+      <label class="field-label" for="input-ps-limit">Limit (optional)</label>
+      <input class="field-input" id="input-ps-limit" type="number" min="1" placeholder="all products" />
+      <button class="btn btn--primary" id="btn-sync-prestashop" type="button">Sync products</button>
+      <p class="source-card__result" id="result-prestashop" aria-live="polite"></p>
+    </section>
+
+    <section class="source-card" id="card-frontend">
+      <div class="source-card__head">
+        <h3>Live frontend pages</h3>
+        <span class="source-card__tag">scraped &amp; structured</span>
+      </div>
+      <p class="source-card__desc">One URL per line. Each page is parsed into hero / features / testimonial / CTA / related-product blocks.</p>
+      <textarea class="field-input field-textarea" id="input-frontend-urls" rows="3" placeholder="https://yourshop.com/your-product&#10;https://yourshop.com/category/page"></textarea>
+      <button class="btn btn--primary" id="btn-sync-frontend" type="button">Scrape pages</button>
+      <p class="source-card__result" id="result-frontend" aria-live="polite"></p>
+    </section>
+
+    <section class="source-card" id="card-gmail">
+      <div class="source-card__head">
+        <h3>Gmail</h3>
+        <span class="source-card__tag">OAuth2 &middot; real inbox</span>
+      </div>
+      <p class="source-card__desc">Fetches unread (or recent) emails, extracts clean text, and detects the product and intent in each one.</p>
+      <label class="field-label" for="input-gmail-query">Search query (optional)</label>
+      <input class="field-input" id="input-gmail-query" type="text" placeholder="is:unread" />
+      <button class="btn btn--primary" id="btn-sync-gmail" type="button">Sync Gmail</button>
+      <button class="btn btn--accent btn--block" id="btn-gmail-auto" type="button">&#9889; Fetch Gmail &amp; Generate Updates</button>
+      <p class="source-card__result" id="result-gmail" aria-live="polite"></p>
+    </section>
+  </aside>
+
+  <div class="generate-column">
+
+    <section class="email-inbox-panel" id="email-inbox-panel">
+      <h2 class="panel-heading">Email inbox</h2>
+      <p class="panel-subtext">Synced emails land here with their detected product and intent. Pick one to generate a page update from it, or use Auto mode on the left.</p>
+      <div class="email-list" id="email-list"></div>
+      <div class="empty-state empty-state--compact" id="email-empty-state">No emails synced yet.</div>
+    </section>
+
+    <section class="generate-panel">
+      <h2 class="panel-heading">Generate page update</h2>
+      <p class="panel-subtext">Paste the client conversation. Relevant WordPress, PrestaShop, and frontend context is retrieved automatically — no manual pasting.</p>
+
+      <label class="field-label" for="input-client-message">Client conversation input</label>
+      <textarea class="field-input field-textarea field-textarea--lg" id="input-client-message" rows="6"
+        placeholder="e.g. &quot;Hey, can we get a banner on the backup plan page pushing our summer discount? Customers keep asking if restores are really that fast.&quot;"></textarea>
+
+      <div class="actions">
+        <button class="btn btn--accent" id="btn-generate" type="button">Generate page update</button>
+        <span class="generate-status" id="generate-status"></span>
+      </div>
+
+      <div class="structure-rail" aria-label="Locked page structure">
+        <div class="structure-rail__label">Locked structure — Claude can rewrite content, not this order</div>
+        <ol class="rail">
+          <li class="rail__node"><span class="rail__lock">&#128274;</span>Hero</li>
+          <li class="rail__node"><span class="rail__lock">&#128274;</span>Features</li>
+          <li class="rail__node"><span class="rail__lock">&#128274;</span>Testimonials</li>
+          <li class="rail__node"><span class="rail__lock">&#128274;</span>CTA</li>
+        </ol>
+      </div>
+
+      <div class="results" id="results" hidden>
+        <div class="tabs" role="tablist">
+          <button class="tab is-active" data-tab="preview" role="tab" type="button">Preview</button>
+          <button class="tab" data-tab="suggestions" role="tab" type="button">Suggestions</button>
+          <button class="tab" data-tab="json" role="tab" type="button">Raw JSON</button>
+        </div>
+
+        <div class="tab-panel is-active" data-panel="preview">
+          <div class="source-banner" id="source-banner" hidden></div>
+          <div class="structure-warning" id="structure-warning" hidden></div>
+          <iframe class="preview-frame" id="preview-frame" title="Generated section preview" sandbox=""></iframe>
+        </div>
+
+        <div class="tab-panel" data-panel="suggestions">
+          <div class="suggestion-grid">
+            <div class="suggestion-card">
+              <h4>SEO suggestions</h4>
+              <ul id="list-seo"></ul>
+            </div>
+            <div class="suggestion-card">
+              <h4>UX / improvement suggestions</h4>
+              <ul id="list-improvements"></ul>
+            </div>
+            <div class="suggestion-card">
+              <h4>CTA variations</h4>
+              <ul id="list-cta"></ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel" data-panel="json">
+          <pre class="json-view" id="json-view"></pre>
+        </div>
+      </div>
+
+      <div class="empty-state" id="empty-state">
+        Nothing generated yet. Sync at least one knowledge source, describe what the client wants, then generate.
+      </div>
+    </section>
+
+  </div>
+
+</main>
+
+<footer class="footer">
+  Local instance · API at <code>/api</code> · context retrieval and generation run entirely against your own WordPress, PrestaShop, and Claude credentials.
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
