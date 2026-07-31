@@ -1,0 +1,33 @@
+# Secrets / credentials
+.env
+.env.*
+!.env.example
+backend/credentials.json
+backend/token.json
+
+# Database
+backend/data/*.db
+backend/data/*.sqlite3
+
+# Python
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Logs
+logs/
+*.log
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
